@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AVFAudio
 
 struct ContentView: View {
     @State private var firstNumber = 0
@@ -13,6 +14,11 @@ struct ContentView: View {
     @State private var firstNumberEmojis = ""
     @State private var secondNumberEmojis = ""
     @State private var answer = ""
+    @State private var audioPlayer: AVAudioPlayer!
+    @State private var textFieldIsDisabled = false
+    @State private var buttonIsDisabled = false
+    @State private var message = ""
+    @FocusState private var isFocused: Bool
     
     private let emojis = ["🍕", "🍎", "🍏", "🐵", "👽", "🧠", "🧜🏽‍♀️", "🧙🏿‍♂️", "🥷", "🐶", "🐹", "🐣", "🦄", "🐝", "🦉", "🦋", "🦖", "🐙", "🦞", "🐟", "🦔", "🐲", "🌻", "🌍", "🌈", "🍔", "🌮", "🍦", "🍩", "🍪"]
     
@@ -26,11 +32,13 @@ struct ContentView: View {
             .font(Font.system(size: 80))
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.5)
-                
+            .animation(.default, value: message)
+            
             Spacer()
             
             Text("\(firstNumber) + \(secondNumber) =")
                 .font(.largeTitle)
+                .animation(.default, value: message)
             
             TextField("", text: $answer)
                 .font(.largeTitle)
@@ -42,17 +50,73 @@ struct ContentView: View {
                 }
                 .multilineTextAlignment(.center)
                 .keyboardType(.numberPad)
+                .focused($isFocused)
+                .disabled(textFieldIsDisabled)
+            Spacer()
+            Button("Guess") {
+                isFocused = false
+                guard let answerValue = Int(answer) else {
+                    return
+                }
+                if answerValue == firstNumber + secondNumber {
+                    playSound(soundName: "correct")
+                    message = "Correct!"
+                } else {
+                    playSound(soundName: "wrong")
+                    message = "Sorry, the correct answer is \(firstNumber+secondNumber)"
+                }
+                textFieldIsDisabled = true
+                buttonIsDisabled = true
+            }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(answer.isEmpty || buttonIsDisabled)
+            
+            Spacer()
+            
+            Text(message)
+                .font(.largeTitle)
+                .fontWeight(.black)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(message == "Correct!" ? .green : .red)
+                .animation(.default, value: message)
+            
+            if message != "" {
+                Button("Play Again?") {
+                    message = ""
+                    answer = ""
+                    textFieldIsDisabled = false
+                    buttonIsDisabled = false
+                    generateEquation()
+                }
+            }
         }
-        .padding()
-        .onAppear {
-            firstNumber = Int.random(in: 1...10)
-            secondNumber = Int.random(in: 1...10)
-            firstNumberEmojis = String(repeating: emojis.randomElement()!, count: firstNumber)
-            secondNumberEmojis = String(repeating: emojis.randomElement()!, count: firstNumber)
+            .padding()
+            .onAppear {
+                generateEquation()
+            }
+        }
+    
+    func playSound(soundName: String) {
+        guard let soundFile = NSDataAsset(name: soundName) else {
+            print("😡 ERROR: Could not read file named \(soundName)")
+            return
+        }
+        do {
+            audioPlayer = try AVAudioPlayer(data: soundFile.data)
+            audioPlayer.play()
+        } catch {
+            print("😡 ERROR: \(error.localizedDescription) creating audioPlayer")
         }
     }
-}
+    
+    func generateEquation() {
+        firstNumber = Int.random(in: 1...10)
+        secondNumber = Int.random(in: 1...10)
+        firstNumberEmojis = String(repeating: emojis.randomElement()!, count: firstNumber)
+        secondNumberEmojis = String(repeating: emojis.randomElement()!, count: firstNumber)
 
+    }
+}
 #Preview {
     ContentView()
 }
