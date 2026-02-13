@@ -52,6 +52,7 @@ struct ContentView: View {
                 .keyboardType(.numberPad)
                 .focused($isFocused)
                 .disabled(textFieldIsDisabled)
+           
             Spacer()
             Button("Guess") {
                 isFocused = false
@@ -113,7 +114,7 @@ struct ContentView: View {
         firstNumber = Int.random(in: 1...10)
         secondNumber = Int.random(in: 1...10)
         firstNumberEmojis = String(repeating: emojis.randomElement()!, count: firstNumber)
-        secondNumberEmojis = String(repeating: emojis.randomElement()!, count: firstNumber)
+        secondNumberEmojis = String(repeating: emojis.randomElement()!, count: secondNumber)
 
     }
 }
